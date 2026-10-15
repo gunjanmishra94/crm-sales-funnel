@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: funnel_steps
+    description: >
+      Business definition of the sales funnel. Maps each reporting step to its source:
+      a pipeline stage_id, or a completed activity type. Change the funnel here, not in SQL.
+    columns:
+      - name: funnel_step
+        data_tests: [unique, not_null]
+      - name: source_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['stage', 'activity']

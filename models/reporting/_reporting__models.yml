@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: >
+      Monthly sales funnel. For each month and funnel step, the number of distinct deals that
+      reached that step for the first time in that month. Months without activity are zero-filled.
+    columns:
+      - name: month
+        description: First day of the calendar month.
+        data_tests: [not_null]
+      - name: kpi_name
+        data_tests: [not_null]
+      - name: funnel_step
+        description: Funnel step label, e.g. '1', '2.1'. Sorts correctly as text.
+        data_tests: [not_null]
+      - name: deals_count
+        data_tests: [not_null]

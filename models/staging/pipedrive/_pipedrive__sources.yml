@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: pipedrive
+    description: Raw Pipedrive CRM export, loaded from raw_data/*.csv by docker compose.
+    database: postgres
+    schema: public
+    tables:
+      - name: deal_changes
+        description: >
+          Event log of deal field changes (EAV). One row per change of a tracked field
+          (add_time, user_id, stage_id, lost_reason). The source of truth for deal history.
+      - name: activity
+        description: >
+          Activities (calls, meetings) scheduled for deals. activity_id is NOT unique:
+          11 ids are reused by unrelated activities.
+      - name: activity_types
+        description: Lookup of activity types. Joins to activity on activity_types.type = activity.type.
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: fields
+        description: Metadata for deal fields, including JSON option labels for enum fields.
+        columns:
+          - name: id
+            data_tests: [unique, not_null]
+      - name: stages
+        description: Pipeline stages, ordered by stage_id.
+        columns:
+          - name: stage_id
+            data_tests: [unique, not_null]
+      - name: users
+        description: CRM users (deal owners / activity assignees).
+        columns:
+          - name: id
+            data_tests: [unique, not_null]

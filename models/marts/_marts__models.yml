@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: dim_deals
+    description: Current state of each deal, derived from the deal_changes event log.
+    columns:
+      - name: deal_id
+        data_tests: [unique, not_null]
+      - name: created_at
+        data_tests: [not_null]
+      - name: current_stage_id
+        description: Stage of the most recent stage change.
+      - name: furthest_stage_id
+        description: Highest stage the deal ever reached.
+      - name: current_owner_user_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_pipedrive__users')
+                field: user_id
+      - name: lost_reason
+        description: >
+          Label of the latest lost_reason. Note: every deal in the source has a lost_reason
+          as its final event, including deals in Renewal/Expansion.
+      - name: has_multiple_creation_events
+        description: True for deal_ids that hold two separate deal histories (5 in the source).
+
+  - name: fct_deal_funnel_events
+    description: One row per deal and funnel step, timestamped at the first time the step was reached.
+    columns:
+      - name: deal_funnel_event_key
+        data_tests: [unique, not_null]
+      - name: deal_id
+        data_tests: [not_null]
+      - name: funnel_step
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('funnel_steps')
+                field: funnel_step
+      - name: reached_at
+        data_tests: [not_null]

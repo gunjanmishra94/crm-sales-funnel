@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: int_deal_stage_entries
+    description: First time each deal entered each pipeline stage.
+    columns:
+      - name: deal_id
+        data_tests: [not_null]
+      - name: stage_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_pipedrive__stages')
+                field: stage_id
+      - name: first_entered_at
+        data_tests: [not_null]
+
+  - name: int_deal_sales_calls
+    description: First completed Sales Call 1 (meeting) and Sales Call 2 (sc_2) per deal.
+    columns:
+      - name: deal_id
+        description: >
+          Only 8 of 4,579 source activities reference a deal_id present in deal_changes,
+          so sales calls cannot be reliably tied to pipeline deals. Warned, not failed.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_deals')
+                field: deal_id
+              config:
+                severity: warn
+      - name: activity_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['meeting', 'sc_2']
