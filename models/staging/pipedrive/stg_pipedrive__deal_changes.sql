@@ -6,7 +6,7 @@ with source as (
 
 select
     deal_id,
-    change_time                             as changed_at,
+    {{ to_reporting_timezone("change_time") }} as changed_at,
     changed_field_key                       as field_key,
     new_value
 from source

@@ -2,60 +2,107 @@ version: 2
 
 models:
   - name: stg_pipedrive__deal_changes
-    description: One row per deal field change.
+    description: >
+      One row per change of a tracked deal field (event log). The only source of deal history:
+      creation, owner, stage and lost reason are all rebuilt from it.
     columns:
       - name: deal_id
+        description: '{{ doc("deal_id") }}'
         data_tests: [not_null]
       - name: changed_at
+        description: When the field changed. {{ doc("berlin_timestamp") }}
         data_tests: [not_null]
       - name: field_key
+        description: >
+          Which field changed. The build fails on a new, unhandled key, because new_value is cast per key.
         data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values: ['add_time', 'user_id', 'stage_id', 'lost_reason']
+      - name: new_value
+        description: >
+          New value as text: a stage id, user id, lost reason id or timestamp depending on field_key.
+          Cast only after filtering on field_key.
 
   - name: stg_pipedrive__activities
-    description: One row per activity. activity_key is the unique key (activity_id is not).
+    description: One row per activity (call or meeting). activity_key is the unique key; activity_id is not.
     columns:
       - name: activity_key
+        description: Surrogate key over activity_id, deal_id, type and due_to (NULL-safe md5).
         data_tests: [unique, not_null]
+      - name: activity_id
+        description: "Pipedrive activity id. Not unique: 11 ids are reused by unrelated activities (DQ-3)."
       - name: deal_id
+        description: Deal the activity belongs to. Only 8 of 4,579 match a deal in deal_changes (DQ-2).
         data_tests: [not_null]
-      - name: activity_type
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_pipedrive__activity_types')
-                field: activity_type
       - name: user_id
+        description: User the activity is assigned to.
         data_tests:
           - relationships:
               arguments:
                 to: ref('stg_pipedrive__users')
                 field: user_id
+      - name: activity_type
+        description: Activity type code, e.g. meeting (Sales Call 1) or sc_2 (Sales Call 2).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_pipedrive__activity_types')
+                field: activity_type
+      - name: is_done
+        description: True when the activity was completed.
+      - name: due_at
+        description: Due date of the activity, used as its date (no completion time exists). {{ doc("berlin_timestamp") }}
 
   - name: stg_pipedrive__activity_types
+    description: Lookup of activity types. Joins to activities on the type code, not on the id.
     columns:
       - name: activity_type_id
+        description: Id of the activity type. Not referenced by activities.
         data_tests: [unique, not_null]
       - name: activity_type
+        description: Type code used in activities (meeting, sc_2, follow_up, after_close_call).
         data_tests: [unique, not_null]
+      - name: activity_type_name
+        description: Display name, e.g. Sales Call 1.
+      - name: is_active
+        description: False for follow_up, which is inactive but still used by 1,133 activities (DQ-9).
 
   - name: stg_pipedrive__stages
+    description: Pipeline stages 1 to 9. stage_id follows the pipeline order.
     columns:
       - name: stage_id
+        description: Stage id, 1 = Lead Generation ... 9 = Renewal/Expansion.
         data_tests: [unique, not_null]
+      - name: stage_name
+        description: Stage name. Stage 2 is spelled "Qualified lead" here; report names come from the seed (DQ-8).
 
   - name: stg_pipedrive__users
+    description: CRM users (deal owners and activity assignees).
     columns:
       - name: user_id
+        description: User id. The only column used in joins; names and emails have duplicates (DQ-12).
         data_tests: [unique, not_null]
+      - name: user_name
+        description: User name. Not unique.
+      - name: email
+        description: Email. Not unique.
+      - name: modified_at
+        description: Last modification of the user record. {{ doc("berlin_timestamp") }}
 
   - name: stg_pipedrive__field_options
-    description: One row per option of an enum deal field.
+    description: >
+      One row per option of an enum deal field (stage_id, lost_reason), unpacked from the JSON list in
+      fields. Named after its grain, not after the source table.
     columns:
       - name: field_key
+        description: Field the option belongs to.
         data_tests: [not_null]
+      - name: field_name
+        description: Display name of the field.
       - name: option_id
+        description: Option id as stored in deal_changes.new_value.
         data_tests: [not_null]
+      - name: option_label
+        description: Option label, e.g. a stage name or lost reason.

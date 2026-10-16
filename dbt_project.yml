@@ -9,21 +9,37 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
+vars:
+  # Pipedrive stores timestamps in UTC. Enpal operates in Germany, so months are reported in Berlin time.
+  source_timezone: 'UTC'
+  reporting_timezone: 'Europe/Berlin'
+
 clean-targets:
   - "target"
   - "dbt_packages"
 
 models:
   enpal_assessment_project:
+    # Materializations and tags are set per folder; a model sets its own config only to deviate.
+    # Everything is rebuilt in full: ~15k source rows, CSVs reloaded on every start, and `activity`
+    # holds mutable state, so incremental models would add risk without saving time (see README, Data model).
     +schema: pipedrive_analytics
+    +tags: ['pipedrive']
     staging:
       +materialized: view
+      +tags: ['staging']
     intermediate:
       +materialized: view
+      +tags: ['intermediate']
     marts:
       +materialized: table
+      +tags: ['marts']
     reporting:
       +materialized: table
+      +tags: ['reporting']
+      extensions:
+        # beyond the brief; `dbt build --exclude tag:extension` builds only what was asked
+        +tags: ['extension']
 
 seeds:
   enpal_assessment_project:
@@ -31,6 +47,8 @@ seeds:
     funnel_steps:
       +column_types:
         funnel_step: varchar(5)
+        step_order: integer
         kpi_name: varchar(100)
         source_type: varchar(20)
         source_key: varchar(20)
+        funnel_phase: varchar(20)

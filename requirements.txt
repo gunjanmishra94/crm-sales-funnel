@@ -1,0 +1,9 @@
+# dbt (tested with dbt-core 1.12.6 and dbt-postgres 1.11.0); patch updates only.
+dbt-core~=1.12.6
+dbt-postgres~=1.11.0
+
+# Optional Streamlit dashboard (dashboard/app.py); not needed for dbt build.
+streamlit~=1.66.0
+plotly~=7.1.0
+pandas~=3.0.6
+psycopg2-binary~=2.9.13

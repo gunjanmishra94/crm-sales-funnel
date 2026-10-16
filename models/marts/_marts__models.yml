@@ -2,42 +2,83 @@ version: 2
 
 models:
   - name: dim_deals
-    description: Current state of each deal, derived from the deal_changes event log.
+    description: >
+      One row per deal: its current state rebuilt from the deal_changes event log in one scan
+      (creation, current and furthest stage, owner, lost reason, and stage and phase at loss).
     columns:
       - name: deal_id
+        description: '{{ doc("deal_id") }}'
         data_tests: [unique, not_null]
       - name: created_at
+        description: First creation event (Berlin time).
         data_tests: [not_null]
       - name: current_stage_id
         description: Stage of the most recent stage change.
+      - name: current_stage_name
+        description: Name of current_stage_id.
       - name: furthest_stage_id
         description: Highest stage the deal ever reached.
+      - name: last_stage_change_at
+        description: Time of the most recent stage change (Berlin time).
       - name: current_owner_user_id
+        description: Owner from the most recent owner change.
         data_tests:
           - relationships:
               arguments:
                 to: ref('stg_pipedrive__users')
                 field: user_id
+      - name: lost_reason_id
+        description: Id of the latest lost reason.
       - name: lost_reason
         description: >
           Label of the latest lost_reason. Note: every deal in the source has a lost_reason
-          as its final event, including deals in Renewal/Expansion.
+          as its final event, including deals in Renewal/Expansion (DQ-5).
+      - name: lost_at
+        description: Time of the latest lost reason (Berlin time).
+      - name: lost_stage_id
+        description: Stage the deal was in when it was marked lost. Null if the stage changed afterwards.
+      - name: lost_phase
+        description: >
+          Sales phase of lost_stage_id. post_sale losses are cancellations after signature
+          (withdrawal, failed site survey or financing check) or lost upsells.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pre_sale', 'closing', 'post_sale']
       - name: has_multiple_creation_events
-        description: True for deal_ids that hold two separate deal histories (5 in the source).
+        description: True for deal_ids that hold two separate deals' histories (5 in the source, DQ-1).
 
   - name: fct_deal_funnel_events
-    description: One row per deal and funnel step, timestamped at the first time the step was reached.
+    description: >
+      One row per deal and funnel step, timestamped at the first time the step was reached.
+      A pipeline stage counts as reached when the deal was recorded in it or any later stage.
     columns:
       - name: deal_funnel_event_key
+        description: Surrogate key over deal_id and funnel_step.
         data_tests: [unique, not_null]
       - name: deal_id
+        description: '{{ doc("deal_id") }}'
         data_tests: [not_null]
       - name: funnel_step
+        description: '{{ doc("funnel_step") }}'
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('funnel_steps')
                 field: funnel_step
+      - name: step_order
+        description: '{{ doc("step_order") }}'
+      - name: kpi_name
+        description: '{{ doc("kpi_name") }}'
+      - name: source_type
+        description: stage (from deal_changes) or activity (from completed sales calls).
+      - name: funnel_phase
+        description: pre_sale, closing or post_sale, from the funnel_steps seed.
       - name: reached_at
+        description: '{{ doc("reached_at") }}'
         data_tests: [not_null]
+      - name: is_recorded
+        description: '{{ doc("is_recorded") }} Always true for sales calls.'
+      - name: reached_month
+        description: First day of the Berlin calendar month of reached_at.

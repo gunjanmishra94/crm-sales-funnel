@@ -2,27 +2,34 @@ version: 2
 
 models:
   - name: int_deal_stage_entries
-    description: First time each deal entered each pipeline stage.
+    description: >
+      One row per deal and pipeline stage the deal reached, i.e. was recorded in that stage or a
+      later one. Skipped stages are filled in with the time the deal first got past them.
     columns:
       - name: deal_id
+        description: '{{ doc("deal_id") }}'
         data_tests: [not_null]
       - name: stage_id
+        description: Pipeline stage reached.
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('stg_pipedrive__stages')
                 field: stage_id
-      - name: first_entered_at
+      - name: first_reached_at
+        description: First time the deal was in this stage or any later stage (Berlin time).
         data_tests: [not_null]
+      - name: is_recorded
+        description: '{{ doc("is_recorded") }}'
 
   - name: int_deal_sales_calls
     description: First completed Sales Call 1 (meeting) and Sales Call 2 (sc_2) per deal.
     columns:
       - name: deal_id
         description: >
-          Only 8 of 4,579 source activities reference a deal_id present in deal_changes,
-          so sales calls cannot be reliably tied to pipeline deals. Warned, not failed.
+          Deal id from the activity. Only 8 of 4,579 source activities reference a deal_id present in
+          deal_changes, so sales calls cannot be reliably tied to pipeline deals. Warned, not failed.
         data_tests:
           - not_null
           - relationships:
@@ -32,7 +39,11 @@ models:
               config:
                 severity: warn
       - name: activity_type
+        description: Call type, one of the seed's activity steps (meeting = Sales Call 1, sc_2 = Sales Call 2).
         data_tests:
-          - accepted_values:
+          - relationships:
               arguments:
-                values: ['meeting', 'sc_2']
+                to: ref('funnel_steps')
+                field: source_key
+      - name: first_completed_at
+        description: Due date of the first completed call of this type (Berlin time).

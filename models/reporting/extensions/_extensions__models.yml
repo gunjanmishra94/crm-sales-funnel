@@ -1,0 +1,38 @@
+version: 2
+
+# Reports beyond the brief. Tagged 'extension' in dbt_project.yml.
+models:
+  - name: rep_sales_funnel_cohort
+    description: >
+      Extension beyond the brief. Cohort view of the pipeline: deals grouped by the month they were
+      created (Berlin time), with how many reached each stage, conversion from the cohort and from
+      the previous stage, and the median days from the previous stage. Answers "how far, and how
+      fast, did March's leads get?", which the event-month report can't. Stage steps only: sales
+      calls can't be tied to pipeline deals (DQ-2). Every deal in this export ends with a lost_reason,
+      so all cohorts are complete; on live data the most recent cohorts would still be in progress.
+    columns:
+      - name: cohort_month
+        description: First day of the month the deal was created (Europe/Berlin).
+        data_tests: [not_null]
+      - name: kpi_name
+        description: '{{ doc("kpi_name") }}'
+      - name: funnel_step
+        description: '{{ doc("funnel_step") }}'
+        data_tests: [not_null]
+      - name: step_order
+        description: '{{ doc("step_order") }}'
+        data_tests: [not_null]
+      - name: cohort_deals
+        description: Deals created in the cohort month.
+        data_tests: [not_null]
+      - name: deals_reached
+        description: Deals of the cohort that reached this stage (recorded in it or any later stage).
+        data_tests: [not_null]
+      - name: share_of_cohort
+        description: deals_reached / cohort_deals.
+      - name: share_of_previous_step
+        description: deals_reached / deals_reached of the previous stage. Null for stage 1.
+      - name: median_days_from_previous_step
+        description: >
+          Median days from reaching the previous stage to reaching this one, over deals recorded in
+          both stages. Skipped stages are excluded because their time is borrowed from a later stage.

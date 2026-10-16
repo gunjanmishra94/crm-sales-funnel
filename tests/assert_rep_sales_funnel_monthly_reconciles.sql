@@ -9,7 +9,7 @@ with report as (
 
 facts as (
 
-    select funnel_step, count(distinct deal_id) as fact_deals
+    select funnel_step, count(*) as fact_deals
     from {{ ref('fct_deal_funnel_events') }}
     group by funnel_step
 

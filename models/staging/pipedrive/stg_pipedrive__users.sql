@@ -8,5 +8,5 @@ select
     id                                      as user_id,
     name                                    as user_name,
     email,
-    modified                                as modified_at
+    {{ to_reporting_timezone("modified") }} as modified_at
 from source
