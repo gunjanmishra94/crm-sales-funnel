@@ -1,0 +1,36 @@
+version: 2
+
+seeds:
+  - name: funnel_steps
+    description: >
+      Business definition of the sales funnel. Maps each reporting step to its source:
+      a pipeline stage_id, or a completed activity type. Change the funnel here, not in SQL.
+    columns:
+      - name: funnel_step
+        description: '{{ doc("funnel_step") }}'
+        data_tests: [unique, not_null]
+      - name: step_order
+        description: >
+          Numeric sort order of the steps. funnel_step is a text label ('2.1'), which sorts correctly
+          today but would put a step '10' before '2'. Consumers should sort by step_order.
+        data_tests: [unique, not_null]
+      - name: kpi_name
+        description: '{{ doc("kpi_name") }}'
+      - name: source_type
+        description: stage (a pipeline stage in deal_changes) or activity (a completed activity type).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['stage', 'activity']
+      - name: source_key
+        description: The stage_id (for stage) or activity type code (for activity) that defines the step.
+      - name: funnel_phase
+        description: >
+          pre_sale (lead to negotiation), closing (contract signature), post_sale (installation and
+          grid registration, customer success, and upsell of battery, wallbox, heat pump or
+          Enpal.One+, or tariff renewal).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['pre_sale', 'closing', 'post_sale']

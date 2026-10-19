@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: >
+      Monthly sales funnel. For each month and funnel step, the number of distinct deals that
+      reached that step for the first time in that month. A pipeline stage counts as reached when
+      the deal was recorded in it or any later stage. Months are calendar months in Berlin time.
+      Months without activity are zero-filled. From October 2024 only stage changes of existing
+      deals remain (installation lead time after the source cut-off), so those months are partial.
+    config:
+      # Output columns are fixed by the brief and read by dashboards: fail the build if they change.
+      contract:
+        enforced: true
+    columns:
+      - name: month
+        description: The calendar month (Europe/Berlin) the row covers, stored as its first day. 2024-05-01 means all of May 2024.
+        data_type: date
+        data_tests: [not_null]
+      - name: kpi_name
+        description: '{{ doc("kpi_name") }}'
+        data_type: varchar
+        data_tests: [not_null]
+      - name: funnel_step
+        description: >
+          {{ doc("funnel_step") }} The brief fixes this model's four columns, so join
+          funnel_steps.step_order to sort.
+        data_type: varchar
+        data_tests: [not_null]
+      - name: deals_count
+        description: Distinct deals that reached the step for the first time in the month. 0 when none.
+        data_type: bigint
+        data_tests: [not_null]

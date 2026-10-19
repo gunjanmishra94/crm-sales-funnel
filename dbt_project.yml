@@ -1,16 +1,7 @@
-
-# Name your project! Project names should contain only lowercase characters
-# and underscores. A good package name should reflect your organization's
-# name or the intended use of these models
 name: 'enpal_assessment_project'
 version: '1.0.0'
-
-# This setting configures which "profile" dbt uses for this project.
 profile: 'enpal_assessment_project'
 
-# These configurations specify where dbt should look for different types of files.
-# The `model-paths` config, for example, states that models in this project can be
-# found in the "models/" directory. You probably won't need to change these!
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -18,19 +9,46 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+vars:
+  # Pipedrive stores timestamps in UTC. Enpal operates in Germany, so months are reported in Berlin time.
+  source_timezone: 'UTC'
+  reporting_timezone: 'Europe/Berlin'
+
+clean-targets:
   - "target"
   - "dbt_packages"
 
-
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
-
-# In this example config, we tell dbt to build all models in the example/
-# directory as views. These settings can be overridden in the individual model
-# files using the `{{ config(...) }}` macro.
 models:
   enpal_assessment_project:
-    # Config indicated by + and applies to all files under models/example/
+    # Materializations and tags are set per folder; a model sets its own config only to deviate.
+    # Everything is rebuilt in full: ~15k source rows, CSVs reloaded on every start, and `activity`
+    # holds mutable state, so incremental models would add risk without saving time (see README, Data model).
     +schema: pipedrive_analytics
-    +materialized: table
+    +tags: ['pipedrive']
+    staging:
+      +materialized: view
+      +tags: ['staging']
+    intermediate:
+      +materialized: view
+      +tags: ['intermediate']
+    marts:
+      +materialized: table
+      +tags: ['marts']
+    reporting:
+      +materialized: table
+      +tags: ['reporting']
+      extensions:
+        # beyond the brief; `dbt build --exclude tag:extension` builds only what was asked
+        +tags: ['extension']
+
+seeds:
+  enpal_assessment_project:
+    +schema: pipedrive_analytics
+    funnel_steps:
+      +column_types:
+        funnel_step: varchar(5)
+        step_order: integer
+        kpi_name: varchar(100)
+        source_type: varchar(20)
+        source_key: varchar(20)
+        funnel_phase: varchar(20)

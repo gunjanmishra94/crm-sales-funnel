@@ -1,0 +1,12 @@
+funnel_step,step_order,kpi_name,source_type,source_key,funnel_phase
+1,1,Lead Generation,stage,1,pre_sale
+2,2,Qualified Lead,stage,2,pre_sale
+2.1,3,Sales Call 1,activity,meeting,pre_sale
+3,4,Needs Assessment,stage,3,pre_sale
+3.1,5,Sales Call 2,activity,sc_2,pre_sale
+4,6,Proposal/Quote Preparation,stage,4,pre_sale
+5,7,Negotiation,stage,5,pre_sale
+6,8,Closing,stage,6,closing
+7,9,Implementation/Onboarding,stage,7,post_sale
+8,10,Follow-up/Customer Success,stage,8,post_sale
+9,11,Renewal/Expansion,stage,9,post_sale
